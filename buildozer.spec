@@ -77,13 +77,13 @@ android.archs = arm64-v8a,armeabi-v7a
 fullscreen = 0
 
 # (list) Android additional libraries
-android.add_libs = python3
+# android.add_libs = python3
 
 # (bool) Copy instead of symlinking libraries
 android.copy_libs = 1
 
-# (str) Android SDK path
-android.sdk_path = /home/start/android-sdk
+# (str) Android SDK path (set via environment in CI)
+# android.sdk_path = /home/start/android-sdk
 
 # (bool) Whether you want to add a custom bootstrap.py
 #android.bootstrap_py = 

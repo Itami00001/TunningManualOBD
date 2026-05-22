@@ -51,10 +51,9 @@ jobs:
       run: |
         export HOME=/tmp/buildozer_home
         mkdir -p /tmp/buildozer_home
+        export ANDROID_HOME=/tmp/android-sdk
+        export BUILD_DIR=/tmp/build
         buildozer android debug
-      env:
-        ANDROID_HOME: /tmp/android-sdk
-        BUILD_DIR: /tmp/build
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
