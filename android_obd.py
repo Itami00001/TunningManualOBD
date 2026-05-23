@@ -4,6 +4,12 @@ from typing import Optional, Tuple
 import logging
 from obd_interface import OBDInterface
 
+try:
+    from jnius import autoclass
+    ANDROID_AVAILABLE = True
+except ImportError:
+    ANDROID_AVAILABLE = False
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -15,18 +21,36 @@ class AndroidOBDInterface(OBDInterface):
         self.device_address = device_address
         self.socket: Optional[socket.socket] = None
         self.connected = False
+        self.java_socket = None
     
     def connect(self, timeout: int = 10) -> bool:
         """Connect to OBD-II adapter via Bluetooth socket."""
+        if not ANDROID_AVAILABLE:
+            logger.error("Android not available, cannot use AndroidOBDInterface")
+            return False
+            
         try:
             logger.info(f"Connecting to OBD-II adapter at {self.device_address}")
             
-            # Create Bluetooth socket
-            self.socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-            self.socket.settimeout(timeout)
+            # Use Java Bluetooth socket with proper UUID
+            BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
+            BluetoothDevice = autoclass('android.bluetooth.BluetoothDevice')
+            UUID = autoclass('java.util.UUID')
             
-            # Connect to device
-            self.socket.connect((self.device_address, 1))  # RFCOMM channel 1 is common for ELM327
+            adapter = BluetoothAdapter.getDefaultAdapter()
+            if not adapter or not adapter.isEnabled():
+                logger.error("Bluetooth not available or not enabled")
+                return False
+            
+            device = adapter.getRemoteDevice(self.device_address)
+            
+            # SPP UUID for serial port profile
+            spp_uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+            
+            # Create RFCOMM socket with UUID
+            self.java_socket = device.createRfcommSocketToServiceRecord(spp_uuid)
+            self.java_socket.connect()
+            
             self.connected = True
             
             # Initialize ELM327
@@ -43,27 +67,30 @@ class AndroidOBDInterface(OBDInterface):
         except Exception as e:
             logger.error(f"Error connecting to OBD-II adapter: {e}")
             self.connected = False
-            if self.socket:
-                self.socket.close()
-                self.socket = None
+            if self.java_socket:
+                try:
+                    self.java_socket.close()
+                except:
+                    pass
+                self.java_socket = None
             return False
     
     def disconnect(self):
         """Disconnect from OBD-II adapter."""
-        if self.socket:
+        if self.java_socket:
             try:
                 self._send_command("AT Z")  # Reset before disconnect
                 time.sleep(0.2)
             except:
                 pass
-            self.socket.close()
-            self.socket = None
+            self.java_socket.close()
+            self.java_socket = None
             self.connected = False
             logger.info("Disconnected from OBD-II adapter")
     
     def is_connected(self) -> bool:
         """Check if currently connected to OBD-II adapter."""
-        return self.connected and self.socket is not None
+        return self.connected and self.java_socket is not None
     
     def _send_command(self, command: str) -> Optional[str]:
         """Send command to ELM327 and get response."""
@@ -72,17 +99,24 @@ class AndroidOBDInterface(OBDInterface):
             return None
         
         try:
-            # Send command
-            self.socket.send((command + "\r").encode())
+            # Send command via Java socket
+            output_stream = self.java_socket.getOutputStream()
+            output_stream.write((command + "\r").encode())
+            output_stream.flush()
             
-            # Read response
+            # Read response via Java socket
+            input_stream = self.java_socket.getInputStream()
             response = ""
+            buffer = bytearray()
+            
+            # Read until we see the ELM327 prompt '>'
             while True:
-                data = self.socket.recv(1024).decode()
+                data = input_stream.read(1024)
                 if not data:
                     break
-                response += data
-                if ">" in data:  # ELM327 prompt
+                buffer.extend(data)
+                response = buffer.decode()
+                if ">" in response:
                     break
             
             # Clean up response

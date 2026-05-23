@@ -94,53 +94,26 @@ class BluetoothManager:
             return []
     
     def _discover_android(self, timeout: int) -> List[Dict[str, str]]:
-        """Discover devices using Android Bluetooth API."""
+        """Discover devices using Android Bluetooth API (simplified - bonded devices only)."""
         try:
             if not self._bluetooth_adapter.isEnabled():
                 logger.warning("Bluetooth is not enabled")
                 return []
             
-            # Start discovery in a thread to avoid blocking UI
+            # Get bonded devices (paired devices)
             self.discovered_devices = []
-            self._stop_discovery = False
+            bonded_devices = self._bluetooth_adapter.getBondedDevices()
             
-            def discovery_worker():
-                try:
-                    BluetoothDevice = autoclass('android.bluetooth.BluetoothDevice')
-                    
-                    # Start discovery
-                    if self._bluetooth_adapter.startDiscovery():
-                        logger.info("Discovery started")
-                        
-                        # Wait for discovery to complete
-                        import time
-                        time.sleep(timeout)
-                        
-                        # Stop discovery
-                        self._bluetooth_adapter.cancelDiscovery()
-                        
-                        # Get bonded devices
-                        bonded_devices = self._bluetooth_adapter.getBondedDevices()
-                        if bonded_devices:
-                            for device in bonded_devices.toArray():
-                                device_info = {
-                                    'name': device.getName() or "Unknown",
-                                    'address': device.getAddress()
-                                }
-                                self.discovered_devices.append(device_info)
-                                logger.info(f"Found device: {device_info['name']} ({device_info['address']})")
-                        
-                        logger.info(f"Discovery completed. Found {len(self.discovered_devices)} devices")
-                    else:
-                        logger.error("Failed to start discovery")
-                        
-                except Exception as e:
-                    logger.error(f"Error in discovery thread: {e}")
+            if bonded_devices:
+                for device in bonded_devices.toArray():
+                    device_info = {
+                        'name': device.getName() or "Unknown",
+                        'address': device.getAddress()
+                    }
+                    self.discovered_devices.append(device_info)
+                    logger.info(f"Found bonded device: {device_info['name']} ({device_info['address']})")
             
-            self._discovery_thread = threading.Thread(target=discovery_worker)
-            self._discovery_thread.start()
-            self._discovery_thread.join(timeout + 2)
-            
+            logger.info(f"Discovery completed. Found {len(self.discovered_devices)} bonded devices")
             return self.discovered_devices
             
         except Exception as e:

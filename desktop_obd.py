@@ -1,4 +1,8 @@
-import obd
+try:
+    import obd
+except ImportError:
+    obd = None
+
 import time
 from typing import Optional, Tuple
 import logging
@@ -18,6 +22,10 @@ class DesktopOBDInterface(OBDInterface):
     
     def connect(self, timeout: int = 10) -> bool:
         """Connect to OBD-II adapter via python-obd."""
+        if obd is None:
+            logger.error("python-obd library not available")
+            return False
+            
         try:
             logger.info(f"Attempting to connect to OBD-II adapter on port: {self.port or 'auto'}")
             

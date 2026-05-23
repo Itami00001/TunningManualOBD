@@ -19,7 +19,7 @@ source.include_exts = py,png,jpg,kv,atlas,json
 #source.include_patterns = assets/*,images/*.png
 
 # (list) Source files to exclude
-#source.exclude_exts = spec
+source.exclude_exts = spec,desktop_obd.py
 
 # (str) Application versioning (method 1)
 version = 0.1
@@ -42,7 +42,7 @@ requirements = python3,kivy,kivymd,pyjnius,plyer,requests
 orientation = portrait
 
 # (list) List of allowed to seek permission on android
-android.permissions = BLUETOOTH,BLUETOOTH_ADMIN,BLUETOOTH_SCAN,BLUETOOTH_CONNECT,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,BLUETOOTH_PRIVILEGED
+android.permissions = BLUETOOTH,BLUETOOTH_ADMIN,BLUETOOTH_SCAN,BLUETOOTH_CONNECT,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION
 
 # (int) Target Android API, should be as high as possible.
 android.api = 30

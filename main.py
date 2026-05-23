@@ -26,12 +26,13 @@ from kivymd.toast import toast
 from kivymd.uix.dialog import MDDialog
 
 from obd_interface import OBDInterface
-from desktop_obd import DesktopOBDInterface
+try:
+    from desktop_obd import DesktopOBDInterface
+except ImportError:
+    DesktopOBDInterface = None
 from android_obd import AndroidOBDInterface
 from vin_decoder import VINDecoder
 from bluetooth_manager import BluetoothManager
-
-Window.size = (400, 700)
 
 
 class MainScreen(MDScreen):
@@ -294,7 +295,14 @@ class MainScreen(MDScreen):
                     self.obd_interface = AndroidOBDInterface(device_address)
                 except ImportError:
                     # Desktop platform
-                    self.obd_interface = DesktopOBDInterface()
+                    if DesktopOBDInterface:
+                        self.obd_interface = DesktopOBDInterface()
+                    else:
+                        def error_no_desktop(dt):
+                            toast("Desktop OBD not available")
+                            self.connect_button.disabled = False
+                        Clock.schedule_once(error_no_desktop, 0)
+                        return
                 
                 # Connect to OBD
                 if self.obd_interface.connect():

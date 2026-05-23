@@ -1,7 +1,6 @@
 import requests
 import logging
 from typing import Optional, Dict
-from nhtsa_vin_decoder import NHTSADecoder
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -11,7 +10,7 @@ class VINDecoder:
     """Decodes VIN numbers using multiple APIs."""
     
     def __init__(self):
-        self.nhtsa_decoder = NHTSADecoder()
+        pass
     
     def decode(self, vin: str) -> Optional[Dict[str, str]]:
         """
@@ -41,25 +40,31 @@ class VINDecoder:
         return None
     
     def _decode_nhtsa(self, vin: str) -> Optional[Dict[str, str]]:
-        """Decode using NHTSA API."""
+        """Decode using NHTSA API directly via HTTP."""
         try:
             logger.info(f"Decoding VIN using NHTSA API: {vin}")
-            vehicle_info = self.nhtsa_decoder.decode(vin)
+            url = f"https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/{vin}?format=json"
+            response = requests.get(url, timeout=10)
             
-            if vehicle_info:
-                result = {
-                    'Make': vehicle_info.get('Make', 'Unknown'),
-                    'Model': vehicle_info.get('Model', 'Unknown'),
-                    'ModelYear': vehicle_info.get('ModelYear', 'Unknown'),
-                    'Manufacturer': vehicle_info.get('Manufacturer', 'Unknown'),
-                    'VehicleType': vehicle_info.get('VehicleType', 'Unknown'),
-                    'PlantCountry': vehicle_info.get('PlantCountry', 'Unknown'),
-                }
+            if response.status_code == 200:
+                data = response.json()
+                results = data.get('Results', [])
                 
-                # Format vehicle name
-                result['FormattedName'] = self._format_vehicle_name(result)
-                logger.info(f"Successfully decoded VIN: {result['FormattedName']}")
-                return result
+                if results:
+                    result_data = results[0]
+                    result = {
+                        'Make': result_data.get('Make', 'Unknown'),
+                        'Model': result_data.get('Model', 'Unknown'),
+                        'ModelYear': result_data.get('ModelYear', 'Unknown'),
+                        'Manufacturer': result_data.get('Manufacturer', 'Unknown'),
+                        'VehicleType': result_data.get('VehicleType', 'Unknown'),
+                        'PlantCountry': result_data.get('PlantCountry', 'Unknown'),
+                    }
+                    
+                    # Format vehicle name
+                    result['FormattedName'] = self._format_vehicle_name(result)
+                    logger.info(f"Successfully decoded VIN: {result['FormattedName']}")
+                    return result
             
         except Exception as e:
             logger.error(f"Error decoding VIN with NHTSA API: {e}")
