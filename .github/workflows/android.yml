@@ -22,8 +22,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install buildozer
-        pip install cython
+        pip install --upgrade buildozer cython
     
     - name: Install system dependencies
       run: |
@@ -49,6 +48,9 @@ jobs:
           pkg-config \
           openjdk-17-jdk \
           unzip
+    
+    - name: Clean buildozer cache
+      run: rm -rf /tmp/buildozer_home/.buildozer
     
     - name: Build APK
       run: |
