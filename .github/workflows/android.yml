@@ -42,7 +42,10 @@ jobs:
           libavcodec-dev \
           zlib1g-dev \
           autoconf \
+          automake \
           libtool \
+          libtool-bin \
+          libltdl-dev \
           pkg-config \
           openjdk-17-jdk \
           unzip
