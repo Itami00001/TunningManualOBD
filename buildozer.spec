@@ -30,7 +30,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,kivymd,pyjnius,plyer,requests,openssl
+requirements = python3,kivy,kivymd,pyjnius,plyer,requests
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/data/presplash.png
@@ -71,7 +71,7 @@ android.accept_sdk_license = True
 #android.logcat_filters = *:S python:D
 
 # (str) Public library to add to the APK
-android.archs = arm64-v8a,armeabi-v7a
+android.archs = arm64-v8a
 
 # (bool) Indicate if the application should be fullscreen or not
 fullscreen = 0
